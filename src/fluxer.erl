@@ -65,8 +65,12 @@ set_db(Name, Flux) ->
 write_series(Flux, _Data) when Flux#flux.db == undefined ->
     {error, db_not_set};
 write_series(Flux, Data) ->
-    Data2 = lists:flatten([Data]),
-    case hackney:post(make_series_url(Flux), [], json:to_binary(Data2)) of
+    Data2 = #{
+        <<"database">> => Flux#flux.db,
+        <<"points">> => lists:flatten([Data])
+    },
+    URL = make_url(<<"/write">>, Flux, [{<<"db">>, Flux#flux.db}]),
+    case hackney:post(URL, [], json:to_binary(Data2)) of
         {ok, 200, _Headers, _ClientRef} ->
             ok;
         {ok, StatusCode, _Headers, ClientRef} ->
